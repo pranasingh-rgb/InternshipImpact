@@ -36,6 +36,13 @@ const steps = [
   },
 ];
 
+const chartPalette = [
+  { bar: 'from-emerald-500 to-teal-400', glow: 'shadow-emerald-200/60', stroke: '#10b981' },
+  { bar: 'from-sky-500 to-cyan-400', glow: 'shadow-sky-200/60', stroke: '#0ea5e9' },
+  { bar: 'from-indigo-500 to-violet-400', glow: 'shadow-indigo-200/60', stroke: '#6366f1' },
+  { bar: 'from-amber-400 to-orange-400', glow: 'shadow-amber-200/60', stroke: '#f59e0b' },
+];
+
 const slides = [
   {
     id: 1,
@@ -83,7 +90,10 @@ const slides = [
     title: 'BAGGING REDESIGN IMPACT',
     body: 'From Reporting to System Logic',
     details: ['The discovery of the relay pattern moved operations from passive tracking to active technical re-engineering.'],
-    metrics: ['+10% DA PRODUCTIVITY INCREASE', '-2hr DWELL TIME AT HUBS'],
+    metrics: [
+      { label: 'DA productivity increase', value: 10, max: 12, tone: 'Lift' },
+      { label: 'Hub dwell time reduction', value: 2, max: 3, tone: 'Time saved' },
+    ],
     bullets: [
       'System Redesign: Rebuilding the bag auto-assignment system at its logic level rather than a superficial dashboard patch.',
       'Anti-Relay Logic: Assignment parameters reworked to mathematically prevent DAs from routing around actual deliveries.',
@@ -98,7 +108,10 @@ const slides = [
     title: 'CALL MASKING AUDITOR',
     body: 'Automated Compliance Checks',
     details: ['Built a self-contained automation engine leveraging Google Apps Script & Gemini to eliminate manual, repetitive auditor tasks.'],
-    metrics: ['1 min: 15 AUDITS (FROM 2 HOURS)', '120x: AUDITING EFFICIENCY GAIN'],
+    metrics: [
+      { label: 'Audits completed per minute', value: 15, max: 15, tone: 'Throughput' },
+      { label: 'Auditing efficiency gain', value: 120, max: 120, tone: 'Automation lift' },
+    ],
     bullets: [
       'Apps Script Backbone: Piles, normalizes, and structured call logs directly from live databases.',
       'Gemini Analysis Layer: Interprets call transcription semantics to automatically flag compliance and masking violations.',
@@ -117,7 +130,12 @@ const slides = [
     title: 'ANALYTICS & OTHER AUDITS',
     body: 'Scale of Data Audited',
     details: ['Designed trackers to monitor critical workflows, ensuring deep visibility into anomalies.'],
-    metrics: ['29,080+ Routes Analyzed', '2,240+ Namshi Deliveries', '776 DA Preference Mappings', '1,740+ Active Session Flashes'],
+    metrics: [
+      { label: 'Routes analyzed', value: 29080, max: 30000, tone: 'Route visibility' },
+      { label: 'Namshi deliveries', value: 2240, max: 30000, tone: 'Delivery tracking' },
+      { label: 'DA preference mappings', value: 776, max: 30000, tone: 'Preference model' },
+      { label: 'Active session flashes', value: 1740, max: 30000, tone: 'Session monitoring' },
+    ],
     bullets: [
       'System & App Auditing: Audited app versions and tracking consistency to identify non-compliant behavior.',
       'Movement Tracker: Established a rolling 30-day shipment flow monitor to identify sorting and transition leakages.',
@@ -159,11 +177,70 @@ const slides = [
   },
 ];
 
+function MetricChart({ metric, index, total }) {
+  const palette = chartPalette[index % chartPalette.length];
+  const percentage = Math.min(Math.max((metric.value / metric.max) * 100, 6), 100);
+  const arcLength = 188;
+  const progressLength = (percentage / 100) * arcLength;
+  const columns = Array.from({ length: 6 }, (_, columnIndex) => {
+    const wave = Math.sin((columnIndex + 1) * (index + 1));
+    return Math.max(18, Math.min(94, percentage * 0.72 + wave * 16 + columnIndex * 4));
+  });
+
+  return (
+    <article
+      className={`rounded-2xl border border-slate-200/80 bg-white/85 p-4 shadow-lg ${palette.glow}`}
+      aria-label={`${metric.label}: ${metric.value}`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.28em] text-slate-500">{metric.tone}</p>
+          <h3 className="mt-2 text-base font-semibold text-slate-900">{metric.label}</h3>
+        </div>
+        <svg className="h-16 w-16 shrink-0" viewBox="0 0 72 72" role="img" aria-hidden="true">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(148,163,184,0.24)" strokeWidth="8" />
+          <circle
+            cx="36"
+            cy="36"
+            r="30"
+            fill="none"
+            stroke={palette.stroke}
+            strokeLinecap="round"
+            strokeWidth="8"
+            strokeDasharray={`${progressLength} ${arcLength}`}
+            transform="rotate(-90 36 36)"
+          />
+        </svg>
+      </div>
+
+      <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full bg-gradient-to-r ${palette.bar}`} style={{ width: `${percentage}%` }} />
+      </div>
+
+      <div className="mt-5 flex h-24 items-end gap-2" aria-hidden="true">
+        {columns.map((height, columnIndex) => (
+          <div key={`${metric.label}-${columnIndex}`} className="flex flex-1 items-end rounded-t-lg bg-slate-100">
+            <div
+              className={`w-full rounded-t-lg bg-gradient-to-t ${palette.bar} opacity-90`}
+              style={{ height: `${height}%` }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.24em] text-slate-500">
+        <span>Baseline</span>
+        <span>{index + 1 === total ? 'Peak' : 'Impact'}</span>
+      </div>
+    </article>
+  );
+}
+
 function App() {
   const [activeStep, setActiveStep] = useState(1);
 
   return (
-    <div className="min-h-screen bg-[#050816] text-zinc-100">
+    <div className="min-h-screen text-slate-800">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         {slides.map((slide, index) => {
           const Icon = slide.icon;
@@ -171,10 +248,10 @@ function App() {
             <section
               key={slide.id}
               id={slide.sectionId}
-              className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900/95 via-slate-900/85 to-slate-950/90 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl lg:p-8"
+              className="rounded-[2rem] border border-white/80 bg-gradient-to-br from-white/95 via-sky-50/90 to-amber-50/80 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:p-8"
             >
               <div className="flex items-center justify-between gap-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.35em] text-violet-300">
+                <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-100/80 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.35em] text-sky-700">
                   <Icon className="h-4 w-4" />
                   {slide.eyebrow}
                 </div>
@@ -182,15 +259,15 @@ function App() {
 
               <div className="mt-6 flex flex-col gap-6">
                 <div className="w-full">
-                  <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{slide.title}</h2>
-                  {slide.body && <p className="mt-3 text-base leading-8 text-zinc-300 sm:text-lg">{slide.body}</p>}
+                  <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{slide.title}</h2>
+                  {slide.body && <p className="mt-3 text-base leading-8 text-slate-700 sm:text-lg">{slide.body}</p>}
                   {slide.links && (
                     <div className="mt-6 flex flex-wrap gap-3">
                       {slide.links.map((link) => (
                         <a
                           key={link.label}
                           href={link.href}
-                          className="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-sm text-violet-200 transition duration-200 hover:-translate-y-0.5 hover:bg-violet-500/20"
+                          className="rounded-full border border-sky-200 bg-white/80 px-3 py-2 text-sm text-sky-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-sky-50"
                         >
                           {link.label}
                         </a>
@@ -198,14 +275,14 @@ function App() {
                     </div>
                   )}
                   {slide.details?.map((detail) => (
-                    <p key={detail} className="mt-3 text-sm leading-7 text-zinc-400">
+                    <p key={detail} className="mt-3 text-sm leading-7 text-slate-600">
                       {detail}
                     </p>
                   ))}
                   {slide.bullets && (
-                    <ul className="mt-5 space-y-3 text-sm leading-7 text-zinc-300">
+                    <ul className="mt-5 space-y-3 text-sm leading-7 text-slate-700">
                       {slide.bullets.map((bullet) => (
-                        <li key={bullet} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                        <li key={bullet} className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                           {bullet}
                         </li>
                       ))}
@@ -218,22 +295,22 @@ function App() {
                           <button
                             key={step.id}
                             onClick={() => setActiveStep(step.id)}
-                            className={`rounded-full border px-3 py-2 text-sm transition duration-200 ${activeStep === step.id ? 'border-violet-500 bg-violet-500/15 text-violet-200 shadow-[0_0_0_1px_rgba(167,139,250,0.2)]' : 'border-zinc-700 bg-zinc-900/70 text-zinc-400 hover:-translate-y-0.5 hover:border-violet-500/40 hover:text-violet-200'}`}
+                            className={`rounded-full border px-3 py-2 text-sm transition duration-200 ${activeStep === step.id ? 'border-sky-400 bg-sky-100 text-sky-800 shadow-[0_0_0_1px_rgba(14,165,233,0.16)]' : 'border-slate-200 bg-white/80 text-slate-600 hover:-translate-y-0.5 hover:border-sky-300 hover:text-sky-700'}`}
                           >
                             {step.title}
                           </button>
                         ))}
                       </div>
-                      <div className="rounded-[1.25rem] border border-violet-500/20 bg-violet-500/10 p-4 text-sm leading-7 text-violet-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                        <p className="text-xs uppercase tracking-[0.3em] text-violet-200">Current step</p>
-                        <p className="mt-2 text-lg font-semibold">{steps.find((step) => step.id === activeStep)?.title}</p>
-                        <p className="mt-2 text-zinc-200">{steps.find((step) => step.id === activeStep)?.description}</p>
+                      <div className="rounded-[1.25rem] border border-sky-200 bg-sky-50/90 p-4 text-sm leading-7 text-sky-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                        <p className="text-xs uppercase tracking-[0.3em] text-sky-700">Current step</p>
+                        <p className="mt-2 text-lg font-semibold text-slate-950">{steps.find((step) => step.id === activeStep)?.title}</p>
+                        <p className="mt-2 text-slate-700">{steps.find((step) => step.id === activeStep)?.description}</p>
                       </div>
                     </div>
                   ) : slide.steps ? (
                     <div className="mt-5 space-y-2">
                       {slide.steps.map((step) => (
-                        <div key={step} className="rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-300">
+                        <div key={step} className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700">
                           {step}
                         </div>
                       ))}
@@ -242,21 +319,29 @@ function App() {
                 </div>
 
                 {slide.metrics ? (
-                  <div className="rounded-[1.5rem] border border-white/10 bg-zinc-950/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  <div className="rounded-[1.5rem] border border-slate-200/80 bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="rounded-full border border-sky-200 bg-sky-100 p-2 text-sky-700">
+                        <BarChart3 className="h-4 w-4" />
+                      </div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-sky-700">Impact charts</p>
+                    </div>
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      {slide.metrics.map((metric) => (
-                        <div key={metric} className="rounded-2xl border border-violet-500/20 bg-violet-500/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                          <p className="text-sm uppercase tracking-[0.28em] text-violet-200">Key metric</p>
-                          <p className="mt-2 text-xl font-semibold text-white">{metric}</p>
-                        </div>
+                      {slide.metrics.map((metric, metricIndex) => (
+                        <MetricChart
+                          key={metric.label}
+                          metric={metric}
+                          index={metricIndex}
+                          total={slide.metrics.length}
+                        />
                       ))}
                     </div>
                   </div>
                 ) : null}
 
                 {slide.sources && (
-                  <div className="rounded-[1.25rem] border border-white/10 bg-zinc-950/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                    <p className="text-xs uppercase tracking-[0.3em] text-violet-200">Source</p>
+                  <div className="rounded-[1.25rem] border border-slate-200/80 bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                    <p className="text-xs uppercase tracking-[0.3em] text-sky-700">Source</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {slide.sources.map((source) => (
                         <a
@@ -264,7 +349,7 @@ function App() {
                           href={source.href}
                           target={source.href ? '_blank' : undefined}
                           rel={source.href ? 'noreferrer' : undefined}
-                          className={`rounded-full border px-3 py-2 text-sm ${source.href ? 'border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20' : 'border-zinc-700 bg-zinc-900/80 text-zinc-400'}`}
+                          className={`rounded-full border px-3 py-2 text-sm ${source.href ? 'border-sky-200 bg-white/80 text-sky-700 hover:bg-sky-50' : 'border-slate-200 bg-white/70 text-slate-500'}`}
                         >
                           {source.label}
                         </a>
