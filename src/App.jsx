@@ -91,8 +91,24 @@ const slides = [
     body: 'From Reporting to System Logic',
     details: ['The discovery of the relay pattern moved operations from passive tracking to active technical re-engineering.'],
     metrics: [
-      { label: 'DA productivity increase', value: 10, max: 12, tone: 'Lift' },
-      { label: 'Hub dwell time reduction', value: 2, max: 3, tone: 'Time saved' },
+      {
+        label: 'DA productivity increase',
+        displayValue: '65.11% → 75%',
+        baseline: '65.11%',
+        impact: '75%',
+        tone: 'Lift',
+        progress: 75,
+        hoverText: 'Baseline is 65.11%; impact raises productivity to 75%',
+      },
+      {
+        label: 'Hub dwell time reduction',
+        displayValue: '3–4h → 1–2h',
+        baseline: '3–4 hours',
+        impact: '2 hours saved',
+        tone: 'Time saved',
+        progress: 67,
+        hoverText: 'Baseline is 3–4 hours and this can decrease by 2 hours',
+      },
     ],
     bullets: [
       'System Redesign: Rebuilding the bag auto-assignment system at its logic level rather than a superficial dashboard patch.',
@@ -109,8 +125,24 @@ const slides = [
     body: 'Automated Compliance Checks',
     details: ['Built a self-contained automation engine leveraging Google Apps Script & Gemini to eliminate manual, repetitive auditor tasks.'],
     metrics: [
-      { label: 'Audits completed per minute', value: 15, max: 15, tone: 'Throughput' },
-      { label: 'Auditing efficiency gain', value: 120, max: 120, tone: 'Automation lift' },
+      {
+        label: 'Manual audit batch',
+        displayValue: '15 audits in 60 min',
+        baseline: '1 hour for 15 audits',
+        impact: 'App in ≈1 minute',
+        tone: 'Throughput',
+        progress: 95,
+        hoverText: 'Manual auditing took about an hour for 15 audits; app does it in a little over a minute',
+      },
+      {
+        label: 'Automation efficiency',
+        displayValue: '>60× faster',
+        baseline: 'Manual',
+        impact: 'App',
+        tone: 'Automation lift',
+        progress: 95,
+        hoverText: 'The app compresses an hour of manual work into just over a minute',
+      },
     ],
     bullets: [
       'Apps Script Backbone: Piles, normalizes, and structured call logs directly from live databases.',
@@ -179,47 +211,65 @@ const slides = [
 
 function MetricChart({ metric, index, total }) {
   const palette = chartPalette[index % chartPalette.length];
-  const percentage = Math.min(Math.max((metric.value / metric.max) * 100, 6), 100);
-  const arcLength = 188;
-  const progressLength = (percentage / 100) * arcLength;
-  const columns = Array.from({ length: 6 }, (_, columnIndex) => {
-    const wave = Math.sin((columnIndex + 1) * (index + 1));
-    return Math.max(18, Math.min(94, percentage * 0.72 + wave * 16 + columnIndex * 4));
+  const progressPercent = metric.progress ?? (metric.max ? Math.min(Math.max(Math.round((metric.value / metric.max) * 100), 6), 100) : 100);
+  const displayValue = metric.displayValue ?? (metric.max ? `${metric.value}${metric.unit ?? '%'}` : metric.value);
+  const hoverText = metric.hoverText ?? displayValue;
+  const columns = Array.from({ length: 4 }, (_, columnIndex) => {
+    const variation = Math.sin((columnIndex + 1) * 1.2 + index) * 8;
+    return Math.max(26, Math.min(92, progressPercent * 0.68 + variation + columnIndex * 6));
   });
 
   return (
     <article
       className={`rounded-2xl border border-slate-200/80 bg-white/85 p-4 shadow-lg ${palette.glow}`}
-      aria-label={`${metric.label}: ${metric.value}`}
+      aria-label={`${metric.label}: ${displayValue}`}
+      title={`${metric.label}: ${hoverText}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">{metric.tone}</p>
           <h3 className="mt-2 text-base font-semibold text-slate-900">{metric.label}</h3>
         </div>
-        <svg className="h-16 w-16 shrink-0" viewBox="0 0 72 72" role="img" aria-hidden="true">
-          <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(148,163,184,0.24)" strokeWidth="8" />
-          <circle
-            cx="36"
-            cy="36"
-            r="30"
-            fill="none"
-            stroke={palette.stroke}
-            strokeLinecap="round"
-            strokeWidth="8"
-            strokeDasharray={`${progressLength} ${arcLength}`}
-            transform="rotate(-90 36 36)"
-          />
-        </svg>
+        <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-100/90 p-2">
+          <svg viewBox="0 0 60 60" className="h-full w-full" aria-hidden="true">
+            <circle
+              cx="30"
+              cy="30"
+              r="24"
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth="6"
+            />
+            <circle
+              cx="30"
+              cy="30"
+              r="24"
+              fill="none"
+              stroke={palette.stroke}
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray="150.8"
+              strokeDashoffset={`${150.8 - (progressPercent / 100) * 150.8}`}
+              transform="rotate(-90 30 30)"
+            />
+          </svg>
+        </div>
       </div>
 
-      <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full rounded-full bg-gradient-to-r ${palette.bar}`} style={{ width: `${percentage}%` }} />
+      <div className="mt-5 relative group">
+        <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+          <div className={`h-full rounded-full bg-gradient-to-r ${palette.bar}`} style={{ width: `${progressPercent}%` }} />
+        </div>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition duration-200 group-hover:opacity-100">
+          <span className="rounded-full bg-slate-950/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+            {hoverText}
+          </span>
+        </div>
       </div>
 
       <div className="mt-5 flex h-24 items-end gap-2" aria-hidden="true">
         {columns.map((height, columnIndex) => (
-          <div key={`${metric.label}-${columnIndex}`} className="flex flex-1 items-end rounded-t-lg bg-slate-100">
+          <div key={`${metric.label}-${columnIndex}`} className="flex flex-1 items-end rounded-t-lg bg-slate-100" title={`${Math.round(height)}%`}>
             <div
               className={`w-full rounded-t-lg bg-gradient-to-t ${palette.bar} opacity-90`}
               style={{ height: `${height}%` }}
@@ -228,9 +278,15 @@ function MetricChart({ metric, index, total }) {
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.24em] text-slate-500">
-        <span>Baseline</span>
-        <span>{index + 1 === total ? 'Peak' : 'Impact'}</span>
+      <div className="mt-4 grid gap-2 text-xs uppercase tracking-[0.24em] text-slate-500 sm:grid-cols-2">
+        <div>
+          <span>Baseline</span>
+          <p className="mt-1 text-sm font-semibold text-slate-900">{metric.baseline ?? '—'}</p>
+        </div>
+        <div>
+          <span>Impact</span>
+          <p className="mt-1 text-sm font-semibold text-slate-900">{metric.impact ?? '—'}</p>
+        </div>
       </div>
     </article>
   );
@@ -248,16 +304,17 @@ function App() {
             <section
               key={slide.id}
               id={slide.sectionId}
-              className="rounded-[2rem] border border-white/80 bg-gradient-to-br from-white/95 via-sky-50/90 to-amber-50/80 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:p-8"
+              className="rounded-[2rem] border border-white/80 bg-gradient-to-br from-white/95 via-sky-50/90 to-amber-50/80 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:p-8"
             >
-              <div className="flex items-center justify-between gap-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-100/80 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.35em] text-sky-700">
-                  <Icon className="h-4 w-4" />
-                  {slide.eyebrow}
+              <div className="px-6 py-6 lg:px-8 lg:py-8">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-100/80 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.35em] text-sky-700">
+                    <Icon className="h-4 w-4" />
+                    {slide.eyebrow}
+                  </div>
                 </div>
-              </div>
 
-              <div className="mt-6 flex flex-col gap-6">
+                <div className="mt-6 flex flex-col gap-6">
                 <div className="w-full">
                   <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{slide.title}</h2>
                   {slide.body && <p className="mt-3 text-base leading-8 text-slate-700 sm:text-lg">{slide.body}</p>}
@@ -318,7 +375,7 @@ function App() {
                   ) : null}
                 </div>
 
-                {slide.metrics ? (
+                {slide.metrics && slide.sectionId !== 'analytics' ? (
                   <div className="rounded-[1.5rem] border border-slate-200/80 bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                     <div className="mb-4 flex items-center gap-3">
                       <div className="rounded-full border border-sky-200 bg-sky-100 p-2 text-sky-700">
@@ -358,6 +415,7 @@ function App() {
                   </div>
                 )}
               </div>
+            </div>
             </section>
           );
         })}
